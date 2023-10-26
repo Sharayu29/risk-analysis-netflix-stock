@@ -1,0 +1,51 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+    s3 = boto3.client('s3')
+    bucket_name = "resultsfinalaudit"
+    file_key = 'auditresults.json'
+    
+    existing_data = s3.get_object(Bucket=bucket_name, Key=file_key)
+    existing_json_str = existing_data['Body'].read().decode('utf-8')
+    existing_data_list = json.loads(existing_json_str)
+    
+    existing_dict = {str(index): item for index, item in enumerate(existing_data_list)}
+    
+
+    new_entry_key = str(len(existing_dict))  
+    s = event['s']
+    r = int(event['r'])
+    h = int(event['h'])
+    d = int(event['d'])
+    t = event['t']
+    p = int(event['p'])
+    profit_loss = event['profit_loss']
+    av95 = event['av95']
+    av99 = event['av99']
+    time = event['time']
+    cost = event['cost']
+    
+    new_entry = {
+        's': s,
+        'r': r,
+        'h': h,
+        'd': d,
+        't': t,
+        'p': p,
+        'profit_loss': profit_loss,
+        'av95': av95,
+        'av99': av99,
+        'time': time,
+        'cost': cost
+    }
+    
+    existing_dict[new_entry_key] = new_entry
+    
+    updated_data_list = [existing_dict[key] for key in sorted(existing_dict.keys(), key=int)]
+    
+    updated_json = json.dumps(updated_data_list)
+    s3.put_object(Bucket=bucket_name, Key=file_key, Body=updated_json)
+    
+    retrieve_data = s3.get_object(Bucket=bucket_name, Key=file_key)['Body'].read().decode('utf-8')
+    return json.loads(retrieve_data

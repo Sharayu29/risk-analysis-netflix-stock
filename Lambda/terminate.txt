@@ -1,0 +1,22 @@
+import boto3
+
+def lambda_handler(event, context):
+    ec2 = boto3.client('ec2')
+    
+    response = ec2.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    
+    instance_ids = [instance['InstanceId'] for reservation in response['Reservations'] for instance in reservation['Instances']]
+    
+    if instance_ids:
+
+        terminate_response = ec2.terminate_instances(InstanceIds=instance_ids)
+        
+        terminated_instance_ids = [instance['InstanceId'] for instance in terminate_response['TerminatingInstances']]
+        
+        return {
+            "result" : "ok"
+        }
+    else:
+        return {
+            "result": "No running instances to terminate."
+        }

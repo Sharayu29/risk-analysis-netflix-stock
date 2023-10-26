@@ -1,0 +1,54 @@
+import boto3
+
+def check_ec2_status(instance_ids):
+    ec2 = boto3.client('ec2')
+    
+    response = ec2.describe_instances(InstanceIds=instance_ids)
+    
+    for reservation in response['Reservations']:
+        for instance in reservation['Instances']:
+            if instance['State']['Name'] == 'running':
+                return True
+            else:
+                return False
+    
+    return True
+
+def lambda_handler(event, context):
+    s = event['s'] 
+    
+    if s == 'lambda':
+        return {
+            "statusCode": 200,
+            "body": "Resources ready",
+            "response": True
+        }
+    
+    elif s == 'ec2':
+        ec2 = boto3.client('ec2', region_name='us-east-1')
+        
+        response = ec2.describe_instances()
+        
+        instance_ids = [instance['InstanceId'] for reservation in response['Reservations'] for instance in reservation['Instances']]
+        
+        if instance_ids:
+            resources_ready = check_ec2_status(instance_ids)
+            
+            if resources_ready:
+                return {
+                    "statusCode": 200,
+                    "body": "Resources ready",
+                    "response": True
+                }
+            else:
+                return {
+                    "statusCode": 200,
+                    "body": "Some of the instances are still not in 'running' state.",
+                    "response": False
+                }
+        else:
+            return {
+                "statusCode": 200,
+                "body": "No instances found.",
+                "response": False
+            }

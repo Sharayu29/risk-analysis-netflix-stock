@@ -1,0 +1,42 @@
+import json
+import boto3
+import time
+
+def lambda_handler(event, context):
+    s = event['s'] 
+    print(s)
+    r = int(event['r'])
+    
+    if s == 'lambda':
+        start_time = time.time()
+        end_time = time.time()
+        return {
+            "result": "ok"
+        }
+        
+    elif s == 'ec2':
+        try:
+            start_time = time.time()
+            ec2 = boto3.resource('ec2', region_name='us-east-1')
+            instances = ec2.create_instances(
+                ImageId='ami-0f45c0462718843a7',
+                InstanceType='t2.micro',
+                MinCount=1,
+                MaxCount=r
+            )
+    
+            for i in instances:
+                i.wait_until_running()
+                i.load()
+                print(i.public_dns_name)
+            end_time = time.time()
+            instanceslist = [i.public_dns_name for i in instances]
+            
+            return {
+                "result": "ok"
+            }
+        except Exception as e:
+            return {
+                "result": "error",
+                "message": str(e)
+            }

@@ -1,0 +1,19 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+    
+    ec2 = boto3.client('ec2')
+    instances = ec2.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    resources = []
+
+    for reservation in instances['Reservations']:
+        for instance in reservation['Instances']:
+            public_ip = instance.get('PublicIpAddress')
+            if public_ip:
+                resource_info = {
+                    'resource': f'http://{public_ip}'
+                }
+                resources.append(resource_info)
+
+    return resources
